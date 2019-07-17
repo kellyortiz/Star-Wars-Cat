@@ -1,0 +1,145 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
+public class player : MonoBehaviour
+{
+
+    // Walk and Jump
+    public float speed;
+    public float jumpForce;
+    private float moveInput;
+    private bool facingRight = true;
+    int extraJumps = 10;
+    int extraJumpsValue = 10000;
+    public float fallDelay;
+
+    //Ground
+    private bool isGrounded;
+    public Transform groundCheck;
+    public float checkRadius;
+    public LayerMask whatIsGround;
+
+    // coin
+    public Text scoreText;
+    public int score = 0;
+
+    //life
+    public int life = 4;
+    public Text lifeText;
+
+    //Audio
+    public AudioClip Scored;
+    public AudioSource metalSound;
+
+    Animator anim;
+    private Rigidbody2D rb;
+
+    void Start()
+    {
+        extraJumps = extraJumpsValue;
+        rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+    }
+
+    void FixedUpdate()
+    {
+
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, whatIsGround);
+        moveInput = Input.GetAxis("Horizontal");
+        rb.velocity = new Vector2(moveInput * speed, rb.velocity.y);
+        Debug.Log(moveInput);
+        if (facingRight == false && moveInput > 0)
+        {
+            Flip();
+        }
+        else if (facingRight == true && moveInput < 0)
+        {
+            Flip();
+        }
+    }
+    void Flip()
+    {
+        facingRight = !facingRight;
+        Vector3 Scaler = transform.localScale;
+        Scaler.x *= -1;
+        transform.localScale = Scaler;
+    }
+
+    void Update()
+    {
+        if (isGrounded == true)
+        {
+            extraJumps = 2;
+        }
+
+        if (Input.GetKeyDown(KeyCode.W) && extraJumps > 0)
+        {
+            rb.velocity = Vector2.up * jumpForce;
+            extraJumps--;
+        }
+        else if ((Input.GetKeyDown(KeyCode.A) && extraJumps == 0) && isGrounded == true)
+        {
+            rb.velocity = Vector2.up * jumpForce;
+
+        }
+        else if ((Input.GetKeyDown(KeyCode.D) && extraJumps == 0) && isGrounded == true)
+        {
+            rb.velocity = Vector2.up * jumpForce;
+
+        } }         
+ 
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (this.tag == "Player" && other.CompareTag("coin"))
+        {
+            Destroy(other.gameObject);
+            score++;
+            scoreText.text = score.ToString();
+        }
+        if (this.tag == "Player" && other.CompareTag("life"))
+        {
+            Destroy(other.gameObject);
+            life++;
+            lifeText.text = life.ToString();
+        }
+        if (this.tag == "Player" && other.CompareTag("object"))
+        {
+            score--;
+            scoreText.text = score.ToString();
+        }
+        if (this.tag == "Player" && other.CompareTag("enemy"))
+        {
+            life--;
+            lifeText.text = life.ToString();
+        }
+        if (this.tag == "Player" && other.CompareTag("objectLife"))
+        {
+            life--;
+            lifeText.text = life.ToString();
+        }
+        if (this.tag == "Player" && other.CompareTag("objectWater"))
+        {
+            life--;
+            lifeText.text = life.ToString();
+   
+        }
+
+        if (life == 0)
+        {
+            anim.Play("dead");
+
+        }
+    }
+    private void OnCollisionEnter(Collision2D collision)
+    {
+        if(collision.gameObject.tag == "objectLife")
+        {
+            metalSound = GetComponent<AudioSource>();
+            metalSound.clip = Scored;
+            metalSound.Play();
+        }
+    }
+}
